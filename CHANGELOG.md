@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Released]
 
+## [0.1.1] - 2022-04-17
+### Changed
+- updated the `Mock.Append` method to be able to use `nil` as an `Exchange`,
+however, that exchange will be ignored in the sequence of exchange calls when
+mocking a microservice.
+
 ## [0.1.0] - 2022-04-05
 ### Added
 - The `microtest` package as a tool to easily test a `microservice` but more

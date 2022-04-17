@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-
-
 // mock is the interface that connects all micro-services
 type mock interface {
 	SetURL(scheme string, host string)
@@ -24,7 +22,7 @@ type mock interface {
 type Response struct {
 	Status int
 	Header map[string][]string
-	Body string
+	Body   string
 }
 
 // Exchange is a Request / Response pair as defined by the IETF RFC2616
@@ -32,7 +30,7 @@ type Response struct {
 // between two servers when using HTTP.
 type Exchange struct {
 	Response Response
-	Request *http.Request
+	Request  *http.Request
 }
 
 // Mock server structure that groups the URL to which the mock server should
@@ -40,11 +38,10 @@ type Exchange struct {
 // Exchange and a counter to count the number of transmissions that have
 // occurred.
 type Mock struct {
-	URL    url.URL
-	Server *httptest.Server
-	Exchanges []*Exchange
+	URL          url.URL
+	Server       *httptest.Server
+	Exchanges    []*Exchange
 	transmission int
-
 }
 
 // MockServer takes any mock or mock-able micro-service and creates a
@@ -99,9 +96,14 @@ func (m *Mock) mockServer(mx mock) *httptest.Server {
 }
 
 // Append adds an Exchange to the queue (Q) of exchanges between the
-// api-gateway and the micro-service. Exchanges in the Q are processed a
+// api-gateway and the microservice. Exchanges in the Q are processed a
 // First-In-First-Out (FIFO) manner.
+//
+// If a nil Exchange is passed then ignore the exchange.
 func (m *Mock) Append(e *Exchange) {
+	if e == nil {
+		return
+	}
 	m.Exchanges = append(m.Exchanges, e)
 }
 
@@ -179,7 +181,7 @@ func NewRequest(method string, target string, query map[string]string, headers m
 func DoRequest(method string, target string, query map[string]string, headers map[string][]string, body io.Reader) *http.Response {
 	c := http.Client{}
 	// new request
-	r,err := http.NewRequest(method, target, body)
+	r, err := http.NewRequest(method, target, body)
 	if err != nil {
 		log.Panicf("unexpected err: %v", err)
 	}
@@ -217,5 +219,5 @@ func NewErr(key string, errors []string) *Err {
 // Error returns a string representation of Err. Also makes it of the
 // type error interface.
 func (e *Err) Error() string {
-	 return fmt.Sprintf("%s", e.errors)
+	return fmt.Sprintf("%s", e.errors)
 }
