@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Released]
 
+## [0.2.0] - 2023-08-12
+### Added
+- A new type `Config` to hold the configuration of the microservice.
+
+### Updated
+- The `NewService` method to accept a `Config` type.
+- The request functions to accept query parameters.
+
 ## [0.1.1] - 2022-04-17
 ### Changed
 - updated the `Mock.Append` method to be able to use `nil` as an `Exchange`,
