@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/dottics/dutil"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -13,10 +12,23 @@ import (
 	"strings"
 )
 
+// Service is the microservice-package structure that contains all the
+// information required to connect to the microservice.
 type Service struct {
 	Name   string
 	Header http.Header
 	URL    url.URL
+	Values url.Values
+}
+
+// Config is the configuration for the microservice-package.
+type Config struct {
+	Name      string
+	UserToken string
+	APIKey    string
+	Header    http.Header
+	URL       url.URL
+	Values    url.Values
 }
 
 // NewService creates a microservice-package instance. The
@@ -24,18 +36,28 @@ type Service struct {
 // variables to be able to connect to the specific microservice. The
 // microservice-package contains all the implementations to correctly
 // exchange with the microservice.
-func NewService(token, serviceName string) *Service {
+func NewService(config Config) *Service {
 	s := &Service{
-		Name: serviceName,
+		Name: config.Name,
 		URL: url.URL{
-			Scheme: os.Getenv(fmt.Sprintf("%s_SERVICE_SCHEME", strings.ToUpper(serviceName))),
-			Host:   os.Getenv(fmt.Sprintf("%s_SERVICE_HOST", strings.ToUpper(serviceName))),
+			Scheme: os.Getenv(fmt.Sprintf("%s_SERVICE_SCHEME", strings.ToUpper(config.Name))),
+			Host:   os.Getenv(fmt.Sprintf("%s_SERVICE_HOST", strings.ToUpper(config.Name))),
 		},
 		Header: make(http.Header),
+		Values: make(url.Values),
+	}
+	// set config headers if given
+	if config.Header != nil {
+		s.Header = config.Header
+	}
+	// set config values if given
+	if config.Values != nil {
+		s.Values = config.Values
 	}
 	// default microservice headers
-	s.Header.Set("Content-Type", "application/json")
-	s.Header.Set("X-User-Token", token)
+	s.Header.Set("content-type", "application/json")
+	s.Header.Set("x-user-token", config.UserToken)
+	s.Header.Set("x-api-key", config.APIKey)
 	return s
 }
 
@@ -63,16 +85,30 @@ func (s *Service) SetEnv() error {
 	return nil
 }
 
-// NewRequest consistently maps and executes requests to the requirements
+// DoRequest consistently maps and executes requests to the requirements
 // for the service and returns the response.
-func (s *Service) NewRequest(method, url string, headers http.Header, payload io.Reader) (*http.Response, dutil.Error) {
+func (s *Service) DoRequest(method string, URL url.URL, query url.Values, headers http.Header, payload io.Reader) (*http.Response, dutil.Error) {
 	client := http.Client{}
-	req, _ := http.NewRequest(method, url, payload)
+	qs := s.Values
+	// set / override additional query params iff necessary
+	for key, values := range query {
+		for _, value := range values {
+			qs.Add(key, value)
+		}
+	}
+	// set the query params
+	URL.RawQuery = qs.Encode()
+
+	// create the request
+	req, _ := http.NewRequest(method, URL.String(), payload)
+
 	// set the default service headers
 	req.Header = s.Header
 	// set / override additional headers iff necessary
 	for key, values := range headers {
-		req.Header.Set(key, values[0])
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
 	}
 	// send the request
 	res, err := client.Do(req)
@@ -89,7 +125,7 @@ func (s *Service) NewRequest(method, url string, headers http.Header, payload io
 // will unmarshal the data into an interface pointer value if the value
 // pointed to by the interface is provided.
 func (s *Service) Decode(res *http.Response, v interface{}) ([]byte, dutil.Error) {
-	xb, err := ioutil.ReadAll(res.Body)
+	xb, err := io.ReadAll(res.Body)
 	if err != nil {
 		e := dutil.NewErr(500, "read", []string{err.Error()})
 		return nil, e
@@ -121,7 +157,7 @@ func (s *Service) GetHome() (bool, dutil.Error) {
 		Errors  map[string][]string `json:"errors"`
 	}{}
 
-	res, e := s.NewRequest("GET", s.URL.String(), nil, nil)
+	res, e := s.DoRequest("GET", s.URL, nil, nil, nil)
 	if e != nil {
 		return false, e
 	}

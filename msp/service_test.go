@@ -72,7 +72,7 @@ func TestNewService(t *testing.T) {
 				t.Errorf("unexpected error before: %v", err)
 			}
 
-			s := NewService(tc.token, "micro")
+			s := NewService(Config{Name: "micro", UserToken: tc.token})
 			xut := s.Header.Get("X-User-Token")
 			if tc.E.token != xut {
 				t.Errorf("expected '%v' got '%v'", tc.E.token, xut)
@@ -95,7 +95,7 @@ func TestNewService(t *testing.T) {
 }
 
 func TestService_SetURL(t *testing.T) {
-	s := NewService("", "mirco")
+	s := NewService(Config{Name: "micro"})
 	s.SetURL("http", "micro.ms.test.dottics.com")
 	if s.URL.Scheme != "http" {
 		t.Errorf("expected '%v' got '%v'", "http", s.URL.Scheme)
@@ -128,7 +128,7 @@ func TestService_SetEnv(t *testing.T) {
 }
 
 func TestService_NewRequest(t *testing.T) {
-	s := NewService("test-fake-token", "micro")
+	s := NewService(Config{Name: "micro", UserToken: "test-fake-token"})
 	ms := microtest.MockServer(s)
 	defer ms.Server.Close()
 
@@ -145,16 +145,15 @@ func TestService_NewRequest(t *testing.T) {
 	s.URL.Path = "/my/path"
 	q := url.Values{}
 	q.Add("u", "my value")
-	s.URL.RawQuery = q.Encode()
 	// set the headers
-	h := map[string][]string{
+	h := http.Header{
 		"X-Random": {"my-random-header"},
 	}
 	// add the body
 	p := strings.NewReader(`{"name":"james"}`)
 
 	// now to make the request
-	_, e := s.NewRequest("PUT", s.URL.String(), h, p)
+	_, e := s.DoRequest("PUT", s.URL, q, h, p)
 
 	if e != nil {
 		t.Errorf("unexpected error: %v", e)
@@ -237,7 +236,7 @@ func TestService_Decode(t *testing.T) {
 		},
 	}
 
-	s := NewService("", "micro")
+	s := NewService(Config{Name: "micro"})
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -320,7 +319,7 @@ func TestService_GetHome(t *testing.T) {
 		},
 	}
 
-	s := NewService("", "micro")
+	s := NewService(Config{Name: "micro"})
 	ms := microtest.MockServer(s)
 	defer ms.Server.Close()
 
