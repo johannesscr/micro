@@ -82,7 +82,7 @@ func TestService_GetHome(t *testing.T) {
 	}
 	ms.Append(e)
 
-	b, _ := s.GetHome()
+	b, _ := s.HealthCheck()
 	if b {
 		t.Errorf("expected true got %t", b)
 	}

@@ -31,7 +31,7 @@ func TestMockServer(t *testing.T) {
 	}
 	ms.Append(e)
 
-	b, _ := s.GetHome()
+	b, _ := s.HealthCheck()
 
 	if !b {
 		t.Errorf("failed to create mock server")
