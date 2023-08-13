@@ -3,7 +3,6 @@ package microservice
 import (
 	"github.com/google/uuid"
 	"github.com/johannesscr/micro/microtest"
-	"net/http"
 	"testing"
 )
 
@@ -83,9 +82,9 @@ func TestService_GetHome(t *testing.T) {
 	}
 	ms.Append(e)
 
-	res := s.GetHome()
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, res.StatusCode)
+	b, _ := s.GetHome()
+	if b {
+		t.Errorf("expected true got %t", b)
 	}
 }
 

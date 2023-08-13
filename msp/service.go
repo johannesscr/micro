@@ -1,7 +1,6 @@
 package msp
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/dottics/dutil"
 	"io"
@@ -58,16 +57,15 @@ func NewService(config Config) *Service {
 	s.Header.Set("content-type", "application/json")
 	s.Header.Set("x-user-token", config.UserToken)
 	s.Header.Set("x-api-key", config.APIKey)
+
 	return s
 }
 
-// SetURL sets the URL for the microservice-package to point to the service.
-//
-// SetURL is also the function which makes the service a mock service
-// interface.
-func (s *Service) SetURL(scheme, host string) {
-	s.URL.Scheme = scheme
-	s.URL.Host = host
+// SetURL sets the URL for the Security Micro-Service to point to
+// SetURL is also the interface that makes it a mock service
+func (s *Service) SetURL(sc string, h string) {
+	s.URL.Scheme = sc
+	s.URL.Host = h
 }
 
 // SetEnv is used for testing, when the dynamic microservice is created
@@ -121,34 +119,10 @@ func (s *Service) DoRequest(method string, URL url.URL, query url.Values, header
 	return res, nil
 }
 
-// Decode is a function that decodes a body into a slice of bytes and also
-// will unmarshal the data into an interface pointer value if the value
-// pointed to by the interface is provided.
-func (s *Service) Decode(res *http.Response, v interface{}) ([]byte, dutil.Error) {
-	xb, err := io.ReadAll(res.Body)
-	if err != nil {
-		e := dutil.NewErr(500, "read", []string{err.Error()})
-		return nil, e
-	}
-	err = res.Body.Close()
-	if err != nil {
-		e := dutil.NewErr(500, "readClose", []string{err.Error()})
-		return nil, e
-	}
-	if v != nil {
-		err = json.Unmarshal(xb, v)
-		if err != nil {
-			e := dutil.NewErr(500, "unmarshal", []string{err.Error()})
-			return nil, e
-		}
-	}
-	return xb, nil
-}
-
-// GetHome is the health-check function which makes a request to the
+// HealthCheck is the health-check function which makes a request to the
 // microservice to check that the service is still up and running.
 // Simply return a true if a request is successful.
-func (s *Service) GetHome() (bool, dutil.Error) {
+func (s *Service) HealthCheck() (bool, dutil.Error) {
 	s.URL.Path = "/"
 
 	resp := struct {
@@ -161,7 +135,7 @@ func (s *Service) GetHome() (bool, dutil.Error) {
 	if e != nil {
 		return false, e
 	}
-	_, e = s.Decode(res, &resp)
+	_, e = Decode(res, &resp)
 	if e != nil {
 		return false, e
 	}

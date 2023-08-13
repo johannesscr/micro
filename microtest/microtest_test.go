@@ -31,9 +31,9 @@ func TestMockServer(t *testing.T) {
 	}
 	ms.Append(e)
 
-	res := s.GetHome()
+	b, _ := s.GetHome()
 
-	if res.StatusCode != 200 {
+	if !b {
 		t.Errorf("failed to create mock server")
 	}
 }
