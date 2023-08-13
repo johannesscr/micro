@@ -21,7 +21,7 @@ type mock interface {
 // expected to be sent back from any microservice.
 type Response struct {
 	Status int
-	Header map[string][]string
+	Header http.Header
 	Body   string
 }
 
