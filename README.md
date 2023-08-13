@@ -47,6 +47,8 @@ Unfortunately there is some boilerplate code needed. (But I will work on making
 this better as I learn more about Go).
 
 ```go 
+package microservice
+
 import (
 	"github.com/johannesscr/micro/msp"
 )
@@ -74,6 +76,51 @@ func NewService() *Service {
     Service: *msp.NewService(config),
   }
   return s
+}
+```
+
+Then to add integration methods with the microservice we can add them to the
+`Service` type.
+
+```go
+package microservice
+
+import (
+    "github.com/johannesscr/micro/msp"
+	"log"
+)
+
+// GetUser returns a user from the microservice
+func (s *Service) GetUser(uUUID string) (User, map[string][]string) {
+  // set the path
+  s.URL.Path = "/user/-"
+
+  // set the query parameters
+  q := url.Values{}
+  q.Add("uuid", uUUID)
+
+  resp := struct {
+    HTTPCode int                 `json:"http_code"`
+    Message  string              `json:"message"`
+    Data     map[string]User     `json:"data"`
+    Errors   map[string][]string `json:"errors"`
+  }{}
+
+  // DoRequest is a method of the msp.Service that will do the request to the
+  // microservice and return the response.
+  res, e := s.DoRequest("GET", s.URL, q, nil, nil)
+  if e != nil {
+    log.Println(e)
+  }
+  // Decode is a function added to the msp package to decode the response from
+  // the microservice to JSON.
+  bs, _ := msp.Decode(res, &resp)
+  if res.StatusCode != 200 {
+    log.Printf("response: %s", string(bs))
+    log.Println(resp.Errors)
+    return User{}, resp.Errors
+  }
+  return resp.Data["user"], nil
 }
 ```
 
