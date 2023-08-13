@@ -51,23 +51,29 @@ import (
 	"github.com/johannesscr/micro/msp"
 )
 
-type Service msp.Service
-
-var microServiceName string = "micro"
-
-// NewService creates a microservice-package (msp) instance. The msp
-// is an instance that loads the environmental variables to be able
-// to connect to the specific microservice. The msp contains all the
-// implementations to correctly exchange with the microservice.
-func NewService(config Config) *Service {
-	return msp.NewService(config)
+// Service id the shorthand for the integration to the microservice
+type Service struct {
+  // defining the msp.Service as an embedded type allows us to access all the
+  // methods of the msp.Service without having to redefine them here.
+  msp.Service
 }
 
-// SetURL sets the scheme and host of the service. Also makes the service
-// a mock-able service with `microtest`
-func (s *Service) SetURL(scheme, host string) {
-	s.URL.Scheme = scheme
-	s.URL.Host = host
+// NewService creates a new instance of the microservice
+func NewService() *Service {
+  // here we need to define the config for the msp.Service, if additional
+  // base config is required we can add / override it here.
+  config := msp.Config{
+    Name: "microservice",
+  }
+
+  // here we just convert the msp.Service to a MicroService as msp.Service
+  // is a package we cannot extend it, so we create a new type that is
+  // identical to msp.Service and add the methods we need to it.
+  //s := (*Service)(msp.NewService(config))
+  s := &Service{
+    Service: *msp.NewService(config),
+  }
+  return s
 }
 ```
 

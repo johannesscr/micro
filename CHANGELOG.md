@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2023-08-12
 ### Added
 - A new type `Config` to hold the configuration of the microservice.
+- Update the `Service` type and the usage so that it can be directly extended
+  when being used.
 
 ### Updated
 - The `NewService` method to accept a `Config` type.
 - The request functions to accept query parameters.
+- The README.md with better examples.
 
 ## [0.1.1] - 2022-04-17
 ### Changed
