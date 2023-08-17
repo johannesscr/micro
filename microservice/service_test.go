@@ -3,14 +3,20 @@ package microservice
 import (
 	"github.com/google/uuid"
 	"github.com/johannesscr/micro/microtest"
-	"net/http"
 	"testing"
 )
 
 func TestNewService(t *testing.T) {
 	s := NewService()
 	if s == nil {
-		t.Errorf("expected %v got %v", service{}, nil)
+		t.Errorf("expected %#v got %v", Service{}, nil)
+	}
+}
+
+func TestService_Name(t *testing.T) {
+	s := NewService()
+	if s.Name != "microservice" {
+		t.Errorf("expected service name 'microservice'got %s", s.Name)
 	}
 }
 
@@ -76,9 +82,9 @@ func TestService_GetHome(t *testing.T) {
 	}
 	ms.Append(e)
 
-	res := s.GetHome()
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, res.StatusCode)
+	b, _ := s.HealthCheck()
+	if b {
+		t.Errorf("expected true got %t", b)
 	}
 }
 
@@ -87,7 +93,7 @@ func TestService_GetUser(t *testing.T) {
 	s := NewService()
 	// startup the microservice
 	ms := microtest.MockServer(s)
-	defer ms.Server.Close()  // defer shut down the microservice
+	defer ms.Server.Close() // defer shut down the microservice
 
 	e := &microtest.Exchange{
 		Response: microtest.Response{

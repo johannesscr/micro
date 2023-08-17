@@ -12,16 +12,16 @@ import (
 	"strings"
 )
 
-// mock is the interface that connects all micro-services
+// mock is the interface that connects all microservices
 type mock interface {
 	SetURL(scheme string, host string)
 }
 
 // Response contains the basic fields required to mock a response to be
-// expected to be sent back from any micro-service.
+// expected to be sent back from any microservice.
 type Response struct {
 	Status int
-	Header map[string][]string
+	Header http.Header
 	Body   string
 }
 
@@ -44,7 +44,7 @@ type Mock struct {
 	transmission int
 }
 
-// MockServer takes any mock or mock-able micro-service and creates a
+// MockServer takes any mock or mock-able microservice and creates a
 // mock http.Server and a Mock structure to aggregate all the mocked methods
 // together.
 func MockServer(mx mock) *Mock {
@@ -55,7 +55,7 @@ func MockServer(mx mock) *Mock {
 	return m
 }
 
-// NewMockServer takes any mock or mock-able micro-service and creates a
+// NewMockServer takes any mock or mock-able microservice and creates a
 // mock http.Server and a Mock structure to aggregate all the mocked methods
 // together.
 func NewMockServer(envScheme string, envHost string) *Mock {
@@ -81,7 +81,7 @@ func (m *Mock) SetURL(scheme string, host string) {
 }
 
 // MockServer takes a type mock interface, the type mock interface is the
-// interface for any micro-service. Due to go routing any request to the mock
+// interface for any microservice. Due to go routing any request to the mock
 // handler the type mock interface which points (via the URL) to the
 // MockServer can return any response provided for any request make to the
 // type mock interface
@@ -107,9 +107,9 @@ func (m *Mock) Append(e *Exchange) {
 	m.Exchanges = append(m.Exchanges, e)
 }
 
-// transmit mocks the action where the micro-service receives the request
+// transmit mocks the action where the microservice receives the request
 // and keeps a reference to the request pointed to and returning the response
-// that should be responded with from the mock micro-service.
+// that should be responded with from the mock microservice.
 func (m *Mock) transmit(r *http.Request) (Response, error) {
 	if m.transmission == len(m.Exchanges) {
 		return Response{}, NewErr("transmission", []string{"exceeded mock request/response exchange transmissions"})
@@ -123,7 +123,7 @@ func (m *Mock) transmit(r *http.Request) (Response, error) {
 
 // mockHandler takes the request properties defined on the Mock and writes
 // it to the response of the mockServer which is a mock representing the
-// micro-service being tested
+// microservice being tested
 func (m *Mock) mockHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//log.Println(m.Response.Status)
@@ -162,23 +162,19 @@ func ReadRecorder(rec *httptest.ResponseRecorder) (*http.Response, []byte) {
 
 // NewRequest is based on a httptest.NewRequest and makes it easy to also
 // add the query parameters.
-func NewRequest(method string, target string, query map[string]string, headers map[string][]string, body io.Reader) *http.Request {
+func NewRequest(method string, target string, query url.Values, headers http.Header, body io.Reader) *http.Request {
 	// new request
 	r := httptest.NewRequest(method, target, body)
 	// set headers
 	r.Header = headers
 	// set query params
-	q := url.Values{}
-	for key, val := range query {
-		q.Add(key, val)
-	}
-	r.URL.RawQuery = q.Encode()
+	r.URL.RawQuery = query.Encode()
 	return r
 }
 
-// DoRequest is based on a httptest.NewRequest and makes it easy to also
-// add the query parameters.
-func DoRequest(method string, target string, query map[string]string, headers map[string][]string, body io.Reader) *http.Response {
+// DoRequest is based on a http.NewRequest and makes it easy to also add the
+// query parameters and test an actual request.
+func DoRequest(method string, target string, query url.Values, headers http.Header, body io.Reader) *http.Response {
 	c := http.Client{}
 	// new request
 	r, err := http.NewRequest(method, target, body)
@@ -188,11 +184,7 @@ func DoRequest(method string, target string, query map[string]string, headers ma
 	// set headers
 	r.Header = headers
 	// set query params
-	q := url.Values{}
-	for key, val := range query {
-		q.Add(key, val)
-	}
-	r.URL.RawQuery = q.Encode()
+	r.URL.RawQuery = query.Encode()
 
 	res, err := c.Do(r)
 	if err != nil {

@@ -31,9 +31,9 @@ func TestMockServer(t *testing.T) {
 	}
 	ms.Append(e)
 
-	res := s.GetHome()
+	b, _ := s.HealthCheck()
 
-	if res.StatusCode != 200 {
+	if !b {
 		t.Errorf("failed to create mock server")
 	}
 }
@@ -140,7 +140,7 @@ func TestMock_mockHandler_request(t *testing.T) {
 	}
 
 	xb, _ := ioutil.ReadAll(e.Request.Body)
-	defer func(){
+	defer func() {
 		_ = e.Request.Body.Close()
 	}()
 	if string(xb) != "hi" {
@@ -281,8 +281,8 @@ func TestNewRequest(t *testing.T) {
 		name     string
 		method   string
 		target   string
-		query    map[string]string
-		headers  map[string][]string
+		query    url.Values
+		headers  http.Header
 		body     io.Reader
 		EMethod  string
 		ETarget  string
@@ -304,9 +304,9 @@ func TestNewRequest(t *testing.T) {
 			name:   "set query parameters",
 			method: "POST",
 			target: "/resource/-",
-			query: map[string]string{
-				"a": "a random value",
-				"q": "12df34al-389j-23d9jd",
+			query: url.Values{
+				"a": {"a random value"},
+				"q": {"12df34al-389j-23d9jd"},
 			},
 			EMethod:  "POST",
 			ETarget:  "/resource/-",
